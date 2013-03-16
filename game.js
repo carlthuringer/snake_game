@@ -117,7 +117,7 @@ $(document).ready(function(){
     paint_cell(food.x, food.y);
     //Lets paint the score
     var score_text = "Score: " + score;
-    ctx.fillText(score_text, 5, H-5)
+    ctx.fillText(score_text, 5, h-5)
   }
 
   //Lets first create a generic function to paint cells
