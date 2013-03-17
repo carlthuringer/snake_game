@@ -1,155 +1,154 @@
-$(document).ready(function(){
-  //Canvas stuff
-  var canvas = $("#canvas")[0];
-  var ctx = canvas.getContext("2d");
-  var w = $("#canvas").width();
-  var h = $("#canvas").height();
+$(function(){
+  var canvas = $("#canvas")[0]; // Find the canvas in the document using jQuery $ and extract its HTML element with [0]
+  var pencil = canvas.getContext("2d"); // Get a tool with the '2d' context, we'll call it 'pencil'
+  // It's a good metaphor to use for this simple game, because all we will do is tell the pencil to change, or tell it to draw.
+  // However it's really a 'Context' object and you can tell it to rotate the canvas like a sheet of paper,
+  // slide it around, and even zoom it in and out.
+  // But that's more than we will do with this simple game.
+  var width = $("#canvas").width();
+  var height = $("#canvas").height();
 
-  //Lets save the cell width in a variable for easy control
-  var cw = 10;
-  var d;
+  var boxSize = 10; // We're setting the size of the boxes that make the graphics for the game to 10 pixels wide.
+  var currentDirection;
   var food;
   var score;
 
-  //Lets create the snake now
-  var snake_array; //an array of cells to make up the snake
+  var snakeArray; //an array of cells to make up the snake
 
-  function init()
-  {
-    d = "right"; //default direction
-    create_snake();
-    create_food(); //Now we can see the food particle
-    //finally lets display the score
-    score = 0;
+  setupGame();
 
-    //Lets move the snake now using a timer which will trigger the paint function
-    //every 60ms
-    if(typeof game_loop != "undefined") clearInterval(game_loop);
-    game_loop = setInterval(paint, 60);
-  }
-  init();
+  function setupGame() {
+    currentDirection = "right"; //default direction
+    createSnake();
+    food = createFood(); // Create a new food particle and save it in the 'food' variable
+    score = 0; //Set the initial score
 
-  function create_snake()
-  {
+    // This checks whether the gameLoop timer has been setup, and if it has, it removes the timer.
+    if(typeof gameLoop != "undefined") clearInterval(gameLoop);
+    // This is a timer that will run the function 'paint' every 60 seconds.
+    gameLoop = setInterval(paint, 60);
+  };
+
+  function createSnake() {
     var length = 5; //Length of the snake
-    snake_array = []; //Empty array to start with
-    for(var i = length-1; i>=0; i--)
-    {
+    snakeArray = []; //Empty array to start with
+    for(var i = length - 1; i >= 0; i--) {
       //This will create a horizontal snake starting from the top left
-      snake_array.push({x: i, y:0});
-    }
-  }
+      snakeArray.push({x: i, y:0});
+    };
+  };
 
-  //Lets create the food now
-  function create_food()
-  {
-    food = {
-      x: Math.round(Math.random()*(w-cw)/cw),
-      y: Math.round(Math.random()*(h-cw)/cw),
+  function createFood() {
+    return {
+      x: Math.round(Math.random() * (width - boxSize) / boxSize),
+      y: Math.round(Math.random() * (height - boxSize) / boxSize),
     };
     //This will create a cell with x/y between 0-44
     //Because there are 45(450/10) positions accross the rows and columns
-  }
+  };
 
-  //Lets paint the snake now
-  function paint()
-  {
+  function paint() {
     //To avoid the snake trail we need to paint the BG on every frame
     //Lets paint the canvas now
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = "black";
-    ctx.strokeRect(0, 0, w, h);
+    pencil.fillStyle = "white";
+    pencil.fillRect(0, 0, width, height);
+    pencil.strokeStyle = "black";
+    pencil.strokeRect(0, 0, width, height);
 
     //The movement code for the snake to come here.
     //The logic is simple
     //Pop out the tail cell and place it infront of the head cell
-    var nx = snake_array[0].x;
-    var ny = snake_array[0].y;
+    var headX = snakeArray[0].x;
+    var headY = snakeArray[0].y;
     //These were the position of the head cell.
     //We will increment it to get the new head position
     //Lets add proper direction based movement now
-    if(d == "right") nx++;
-    else if(d == "left") nx--;
-    else if(d == "up") ny--;
-    else if(d == "down") ny++;
+    if(currentDirection == "right") {
+      headX++;
+    } else if(currentDirection == "left") {
+      headX--;
+    } else if(currentDirection == "up") {
+      headY--;
+    } else if(currentDirection == "down") {
+      headY++;
+    ;}
 
     //Lets add the game over clauses now
     //This will restart the game if the snake hits the wall
     //Lets add the code for body collision
     //Now if the head of the snake bumps into its body, the game will restart
-    if(nx == -1 || nx == w/cw || ny == -1 || ny == h/cw || check_collision(nx, ny, snake_array))
-    {
+    if(headX == -1 || headX == width / boxSize || headY == -1 || headY == height / boxSize || checkCollision(headX, headY, snakeArray)) {
       //restart game
-      init();
-      //Lets organize the code a bit now.
+      setupGame();
+      // And leave the main game loop.
       return;
-    }
+    };
 
     //Lets write the code to make the snake eat the food
     //The logic is simple
     //If the new head position matches with that of the food,
     //Create a new head instead of moving the tail
-    if(nx == food.x && ny == food.y)
-    {
-      var tail = {x: nx, y: ny};
+    if(headX == food.x && headY == food.y) {
+      var tail = {x: headX, y: headY};
       score++;
       //Create new food
-      create_food();
+      food = createFood();
     }
-    else
-    {
-      var tail = snake_array.pop(); //pops out the last cell
-      tail.x = nx; tail.y = ny;
-    }
+    else {
+      var tail = snakeArray.pop(); //pops out the last cell
+      tail.x = headX; tail.y = headY;
+    };
     //The snake can now eat the food.
 
-    snake_array.unshift(tail); //puts back the tail as the first cell
+    snakeArray.unshift(tail); //puts back the tail as the first cell
 
-    for(var i = 0; i < snake_array.length; i++)
-    {
-      var c = snake_array[i];
+    for(var i = 0; i < snakeArray.length; i++) {
+      var cell = snakeArray[i];
       //Lets paint 10px wide cells
-      paint_cell(c.x, c.y);
-    }
+      paint_cell(cell.x, cell.y);
+    };
 
     //Lets paint the food
     paint_cell(food.x, food.y);
     //Lets paint the score
     var score_text = "Score: " + score;
-    ctx.fillText(score_text, 5, h-5)
-  }
+    pencil.fillText(score_text, 5, height - 5)
+  };
 
   //Lets first create a generic function to paint cells
-  function paint_cell(x, y)
-  {
-    ctx.fillStyle = "green";
-    ctx.fillRect(x*cw, y*cw, cw, cw);
-    ctx.strokeStyle = "white";
-    ctx.strokeRect(x*cw, y*cw, cw, cw);
-  }
+  function paint_cell(x, y) {
+    pencil.fillStyle = "green";
+    pencil.fillRect(x * boxSize, y * boxSize, boxSize, boxSize);
+    pencil.strokeStyle = "white";
+    pencil.strokeRect(x * boxSize, y * boxSize, boxSize, boxSize);
+  };
 
-  function check_collision(x, y, array)
-  {
+  function checkCollision(x, y, array) {
     //This function will check if the provided x/y coordinates exist
     //in an array of cells or not
     for(var i = 0; i < array.length; i++)
     {
       if(array[i].x == x && array[i].y == y)
-       return true;
+        return true;
     }
     return false;
-  }
+  };
 
   //Lets add the keyboard controls now
-  $(document).keydown(function(e){
-    var key = e.which;
-    //We will add another clause to prevent reverse gear
-    if(key == "37" && d != "right") d = "left";
-    else if(key == "38" && d != "down") d = "up";
-    else if(key == "39" && d != "left") d = "right";
-    else if(key == "40" && d != "up") d = "down";
-    //The snake is now keyboard controllable
-  })
+  // This first line binds a function to the document's "keydown" event.
+  $(document).on('keydown', (function(event){
+    // The event has a property called 'which' that tells us what key was pressed.
+    var key = event.which;
 
-})
+    // The keys have number codes that we decode into the directions.
+    if(key == "37" && currentDirection != "right") {
+      currentDirection = "left";
+    } else if(key == "38" && currentDirection != "down") {
+      currentDirection = "up";
+    } else if(key == "39" && currentDirection != "left") {
+      currentDirection = "right";
+    } else if(key == "40" && currentDirection != "up") {
+      currentDirection = "down";
+    };
+  }));
+});
